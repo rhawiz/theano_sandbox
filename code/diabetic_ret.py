@@ -24,6 +24,7 @@ def load_mnist(path):
         for line in f:
             yi, xi = line.split(',', 1)
             y.append(yi)
+            print xi
             X.append(xi.split(','))
 
     # Theano works with fp32 precision
@@ -46,7 +47,14 @@ def load_mnist(path):
 
     return X, y
 
-path = os.path.relpath('../data/mnist/train.csv')
+
+def load_data(path):
+    X = []
+    y = []
+
+path = os.path.relpath('../data/diabetic_ret/test.zip.001')
+
+
 
 X, y = load_mnist(path)
 

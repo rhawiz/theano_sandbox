@@ -1,0 +1,23 @@
+Install Anaconda (with scipy)
+
+Download zipped Theano from github and unzip it somewhere on your computer. You should get a folder called "Theano-master".
+
+On Anaconda command prompt, run "conda install mingw libpython". This will install mingw g++ and libpython which are dependencies for Theano.
+
+Open the Windows command prompt, navigate to the Theano-master folder. Then install Theano by typing in the following command line: "python setup.py install --record files.txt
+
+Download the precompiled libopenblas.dll from: http://sourceforge.net/projects/openblas/files/v0.2.14/
+
+Download mingw64_dll.zip from: http://sourceforge.net/projects/openblas/files/v0.2.14/mingw64_dll.zip/download
+
+extract libopenblash.dll + all contents of mingw64_dll.zip to C:\openblas
+
+add C:\openblas to system path
+
+add system environment variable
+    NAME: THEANO_FLAGS
+    VALUE:blas.ldflags=-LC:\\openblas -lopenblas
+
+pip install git+https://github.com/Lasagne/Lasagne.git@b6f1250e#egg=Lasagne==0.2.git
+
+pip install git+https://github.com/dnouri/nolearn.git@master#egg=nolearn==0.7.git
