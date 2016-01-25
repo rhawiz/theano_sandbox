@@ -1,7 +1,7 @@
 import os
+import zipfile
 import matplotlib.pyplot as plt
 import numpy as np
-
 from lasagne.layers import DenseLayer
 from lasagne.layers import InputLayer
 from lasagne.layers import DropoutLayer
@@ -10,65 +10,86 @@ from lasagne.layers import MaxPool2DLayer
 from lasagne.nonlinearities import softmax
 from lasagne.updates import adam
 from lasagne.layers import get_all_params
-
 from nolearn.lasagne import NeuralNet
 from nolearn.lasagne import TrainSplit
 from nolearn.lasagne import objective
+import csv
+import cv2
+import scipy
 
 print 1
-def load_mnist(path):
+
+
+def plot_image(image):
+    plt.imshow(image)
+    plt.show()
+
+
+def load_data(folder_paths, labels_path, log=False, limit=-1):
     X = []
     y = []
-    with open(path, 'rb') as f:
-        next(f)  # skip header
-        for line in f:
-            yi, xi = line.split(',', 1)
-            y.append(yi)
-            print xi
-            X.append(xi.split(','))
+    labels = {}
+    with open(labels_path, 'rb') as csvfile:
+        for row in csv.reader(csvfile):
+            labels[row[0]] = row[1]
+    count = 0
+    for folder_path in folder_paths:
+        for subdir, dirs, files in os.walk(folder_path):
+            for file in files:
+                count += 1
+                path = os.path.join(subdir, file)
+                if '.' not in file:
+                    continue
+
+                label, file_type = file.split('.')
+
+                if log:
+                    print "---File %s" % file
+                image = cv2.imread(path)
+
+                if log:
+                    print "\t--Resizing..."
+                image_resized = cv2.resize(image, (300, 300))
+
+                try:
+                    y.append(labels[label])
+                    X.append(image_resized)
+                except KeyError:
+                    continue
+
+                # TODO: Normalization
+                if log:
+                    print "\n"
+
+                if count == limit:
+                    break
+
+    if log:
+        print "-Converting"
 
     # Theano works with fp32 precision
     X = np.array(X).astype(np.float32)
     y = np.array(y).astype(np.int32)
 
-    # apply some very simple normalization to the data
-    X -= X.mean()
-    X /= X.std()
+    if log:
+        print "-Reshaping"
 
-    # For convolutional layers, the default shape of data is bc01,
-    # i.e. batch size x color channels x image dimension 1 x image dimension 2.
-    # Therefore, we reshape the X data to -1, 1, 28, 28.
     X = X.reshape(
         -1,  # number of samples, -1 makes it so that this number is determined automatically
-        1,   # 1 color channel, since images are only black and white
-        28,  # first image dimension (vertical)
-        28,  # second image dimension (horizontal)
+        3,  # 1 color channel, since images are only black and white
+        300,  # first image dimension (vertical)
+        300,  # second image dimension (horizontal)
     )
 
     return X, y
 
 
-def load_data(path):
-    X = []
-    y = []
+folder_paths = [os.path.relpath('../data/diabetic_ret/train_001/')]
+labels_path = os.path.relpath('../data/diabetic_ret/trainLabels.csv')
 
-path = os.path.relpath('../data/diabetic_ret/test.zip.001')
+X, y = load_data(folder_paths, labels_path, limit=100, log=True)
 
-
-
-X, y = load_mnist(path)
-
-print 2
-
-figs, axes = plt.subplots(4, 4, figsize=(6, 6))
-for i in range(4):
-    for j in range(4):
-        axes[i, j].imshow(-X[i + 4 * j].reshape(28, 28), cmap='gray', interpolation='none')
-        axes[i, j].set_xticks([])
-        axes[i, j].set_yticks([])
-        axes[i, j].set_title("Label: {}".format(y[i + 4 * j]))
-        axes[i, j].axis('off')
-plt.show()
+print "DONE"
 
 layers0 = [
     # layer dealing with the input data
@@ -97,6 +118,7 @@ layers0 = [
     (DenseLayer, {'num_units': 10, 'nonlinearity': softmax}),
 ]
 
+
 def regularization_objective(layers, lambda1=0., lambda2=0., *args, **kwargs):
     # default loss
     losses = objective(layers, *args, **kwargs)
@@ -112,7 +134,6 @@ def regularization_objective(layers, lambda1=0., lambda2=0., *args, **kwargs):
     return losses
 
 
-print 3
 net0 = NeuralNet(
     layers=layers0,
     max_epochs=10,
@@ -127,8 +148,4 @@ net0 = NeuralNet(
     verbose=1,
 )
 
-
-print 4
 net0.fit(X, y)
-
-print 5

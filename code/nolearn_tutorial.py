@@ -50,7 +50,6 @@ path = os.path.relpath('../data/mnist/train.csv')
 
 X, y = load_mnist(path)
 
-print 2
 
 figs, axes = plt.subplots(4, 4, figsize=(6, 6))
 for i in range(4):
